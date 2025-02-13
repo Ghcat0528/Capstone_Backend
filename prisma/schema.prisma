@@ -29,7 +29,7 @@ model Game {
 
 model Review {
   id      String  @id @default(uuid())
-  rating  Int
+  rating  Int     
   content String
   user    User   @relation(fields: [userId], references: [id])
   userId  String

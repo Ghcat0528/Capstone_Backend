@@ -10,7 +10,10 @@ const jwt = require('jsonwebtoken');
 const createReview = async (req, res) => {
     try{ 
         const { gameId, rating, content } = req.body
-        const userId = req.user.id;
+        const userId = req.user?.userId;
+        if (rating < 1 || rating > 5) {
+            return res.status(400).json({ message: "Rating needs to be between 1 and 5, where 1 is worst and 5 is best."})
+        };
         const existingReview = await prisma.review.findFirst({
             where: { gameId, userId}
         });
@@ -22,6 +25,7 @@ const createReview = async (req, res) => {
         });
         res.status(201).json(review)
     } catch (error) {
+        
         res.status(500).json({ message: " DIdnt create review"});
     }
 };
@@ -30,20 +34,25 @@ const createReview = async (req, res) => {
 const getReviewsByGame = async (req, res) => {
     try { 
         const {gameId} = req.params;
+        if (!gameId) {
+            return res.status(400).json({ message: "Game ID is required" });
+        }
+        console.log("Fetching reviews for gameId:", gameId);
         const reviews = await prisma.review.findMany({
             where: { gameId},
-            include: { user: { select: { id: true, username: true}}}
+            include: { user: { select: { id: true, name: true}}}
         });
         res.json(reviews);
 
     } catch (error) {
+        console.error("Error fetching reviews:", error);
         res.status(500).json({ message: "Couldn't get reviews...."})
     }
 };
 
 const getUserReviews = async (req, res) => {
     try{ 
-        const userId= req.user.id
+        const userId= req.user.userId
         const reviews = await prisma.review.findMany({
             where: {userId},
             include: { game: { select: { id: true, title: true}}}
@@ -56,9 +65,12 @@ const getUserReviews = async (req, res) => {
 
 const updateReview = async (req, res) => {
     try{
-        const reviewId = parseInt(req.params.reviewId);
+        const reviewId = req.params.reviewId;
         const { rating, content} = req.body;
-        const userId = req.user.id;
+        const userId = req.user.userId;
+        if (rating < 1 || rating > 5) {
+            return res.status(400).json({ message: "Rating needs to be between 1 and 5, where 1 is worst and 5 is best."})
+        }
         const review = await prisma.review.findUnique({
             where: { id: reviewId}
         });
@@ -77,8 +89,8 @@ const updateReview = async (req, res) => {
 
 const deleteReview = async (req, res) => {
     try{ 
-        const reviewId = parseInt(req.params.reviewId);
-        const userId = req.user.id;
+        const reviewId = req.params.reviewId;
+        const userId = req.user.userId;
 
         const review = await prisma.review.findUnique({
             where: { id: reviewId}

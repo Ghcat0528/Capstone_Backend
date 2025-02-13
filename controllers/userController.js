@@ -1,35 +1,50 @@
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const { PrismaClient } = require('@prisma/client');
+const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
-const registerUser = async (req, res) => {
-    const { name, email, password} = req.body;
-    const hashedPassword = await bcrypt.hash(password, 7)
-
+const getUserProfile = async (req, res) => {
     try{
-        const user = await prisma.user.create({
-            data: {name, email, password: hashedPassword},
+        const user = await prisma.user.findUnique({
+            where: { id: req.user.userId},
+            select: { id: true, name: true, email: true}
         });
-        res.status(201).json({ message: "Registered", user});
-    } catch (error) {
-        res.status(400).json({ message: "Having trouble registering user"})
-    }
-};
-
-const loginUser = async (req, res) => {
-    const { email, password} = req.body;
-
-    try{ 
-        const user = await prisma.user.findUnique({ where: {email}});
-        if (!user || !(await bcrypt.compare(password, user.password))) {
-            return res.status(401).json({ message: "Not right.."});
+        if (!user) {
+            return res.status(404).json({ error: "We dont have that user"})
         }
-        const token = jwt.sign({ id: user.id}, process.env.JWT_SECRET, {expiresIn: "1h"});
-        res.json({ token, user});
+        res.json(user)
     } catch (error) {
-        res.status(500).json({ message: "Login error"});
+        res.status(500).json({ error: "Couldnt fetch profile"})
     }
 };
 
-module.exports = { registerUser, loginUser}
+const updateUserProfile = async (req, res) => {
+    try{
+        const { name, email } = req.body;
+        const updatedUser = await prisma.user.update({
+            where: { id: req.user.userId},
+            data: { name, email}
+        });
+        res.json({ message: "Profile updated!", user: updatedUser});
+    } catch (error) {
+        res.status(500).json({ error: "couldnt update your profile :("})
+    }
+};
+
+const getUserReviews = async (req, res) => {
+    try{
+        const reviews = await prisma.review.findMany({
+            where: { userId: req.user.userId},
+            include: { game: true}
+        });
+        res.json(reviews);
+    } catch (error) {
+        res.status(500).json({ error: "We're having a hard time fetching reviews right now"})
+    }
+};
+
+module.exports = { 
+    getUserProfile,
+    updateUserProfile,
+    getUserReviews };
+
+
+
