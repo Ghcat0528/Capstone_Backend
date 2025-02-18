@@ -18,14 +18,31 @@ model User {
   email    String  @unique
   password String
   reviews  Review[]
+  role     String  @default("user")
+  followers UserFollow[] @relation("UserFollowers")
+  following UserFollow[] @relation("UserFollowing")
+}
+
+model UserFollow {
+  followerId String
+  followingId String
+  follower  User @relation("UserFollowers", fields: [followerId], references: [id])
+  following User @relation("UserFollowing", fields: [followingId], references: [id])
+  @@id([followerId, followingId]) 
 }
 
 model Game {
   id      String  @id @default(uuid())
-  title   String
-  genre   String
+  title   String  
+  picture String?
+   categories Category[] @relation("GameCategories")
   reviews Review[]
 }
+model Category {
+   id    String  @id @default(uuid())
+  name  String  @unique()
+  games  Game[]  @relation("GameCategories")
+  }
 
 model Review {
   id      String  @id @default(uuid())
