@@ -13,43 +13,49 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 model User {
-  id       String  @id @default(uuid())
-  name     String
-  email    String  @unique
-  password String
-  reviews  Review[]
-  role     String  @default("user")
-  followers UserFollow[] @relation("UserFollowers")
-  following UserFollow[] @relation("UserFollowing")
+  id           String        @id @default(uuid())
+  name         String
+  email        String        @unique
+  password     String
+  reviews      Review[]      // No need for onDelete here
+  role         String        @default("user")
+  follows      UserFollow[]  @relation("UserFollows")    // Follow relations, no fields/references here
+  followedBy   UserFollow[]  @relation("UserFollowedBy") // Followed relations, no fields/references here
 }
 
 model UserFollow {
-  followerId String
-  followingId String
-  follower  User @relation("UserFollowers", fields: [followerId], references: [id])
-  following User @relation("UserFollowing", fields: [followingId], references: [id])
-  @@id([followerId, followingId]) 
+  followerId   String
+  followingId  String
+  follower     User   @relation("UserFollows", fields: [followerId], references: [id], onDelete: Cascade)  // From follower's perspective
+  following    User   @relation("UserFollowedBy", fields: [followingId], references: [id], onDelete: Cascade)  // From following's perspective
+
+  @@id([followerId, followingId])  // Composite primary key
 }
 
 model Game {
   id      String  @id @default(uuid())
   title   String  
   picture String?
-   categories Category[] @relation("GameCategories")
-  reviews Review[]
+  categories Category[] @relation("GameCategories")
+  reviews Review[]  // No change here
 }
+
 model Category {
-   id    String  @id @default(uuid())
+  id    String  @id @default(uuid())
   name  String  @unique()
   games  Game[]  @relation("GameCategories")
-  }
+}
 
 model Review {
-  id      String  @id @default(uuid())
-  rating  Int     
-  content String
-  user    User   @relation(fields: [userId], references: [id])
-  userId  String
-  game    Game   @relation(fields: [gameId], references: [id])
-  gameId  String
+  id        String   @id @default(uuid())
+  rating    Int
+  content   String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  game      Game     @relation(fields: [gameId], references: [id])
+  gameId    String
+  createdAt DateTime @default(now())
 }
+
+
+

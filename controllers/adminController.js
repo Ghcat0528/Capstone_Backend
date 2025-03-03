@@ -49,17 +49,48 @@ const updateUserRole = async (req, res) => {
 };
 
 const deleteUser = async (req, res) => {
-  try {
-    const { userId } = req.params;
-    await prisma.user.delete({
-      where: { id: userId },
-    });
-    res.json({ message: "User deleted!" });
-  } catch (error) {
-    res.status(500).json({ message: "Couldnt delete that user." });
-  }
-};
-
+    try {
+      const { userId } = req.params;
+  
+      // Ensure the logged-in user is an admin (assuming req.user.role exists)
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: "You do not have permission to delete this user" });
+      }
+  
+      // Optionally: Check if the user to be deleted exists
+      const userToDelete = await prisma.user.findUnique({
+        where: { id: userId },
+      });
+  
+      if (!userToDelete) {
+        return res.status(404).json({ message: "User not found" });
+      }
+  
+      // Delete related data (e.g., reviews, followers, and following) for this user
+      await prisma.review.deleteMany({
+        where: { userId: userId }, // Delete all reviews by this user
+      });
+  
+      await prisma.follower.deleteMany({
+        where: { followerId: userId }, // Delete all follower records for this user
+      });
+  
+      await prisma.following.deleteMany({
+        where: { followingId: userId }, // Delete all following records for this user
+      });
+  
+      // Finally, delete the user
+      await prisma.user.delete({
+        where: { id: userId },
+      });
+  
+      res.json({ message: "User deleted successfully!" });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ message: "Could not delete that user." });
+    }
+  };
+  
 const getGames = async (req, res) => {
   try {
     const games = await prisma.game.findMany();
@@ -152,10 +183,35 @@ const getReviews = async (req, res) => {
     });
     res.json(reviews);
   } catch (error) {
-    console.error("Error fetching reviews:", error);
     res.status(500).json({ message: "Error fetching reviews" });
   }
 };
+
+const adminDeleteReview = async (req, res) => {
+    const { reviewId } = req.params; 
+    if (!reviewId) {
+        return res.status(400).json({ error: "Review ID is required" });
+    }
+
+    try {
+        const review = await prisma.review.findUnique({
+            where: { id: reviewId } 
+        });
+        if (!review) {
+            return res.status(404).json({ message: 'Review not found' });
+        }
+        await prisma.review.delete({
+            where: { id: reviewId } 
+        });
+
+        res.status(200).json({ message: 'Review deleted successfully!' });
+    } catch (error) {
+        
+        res.status(500).json({ error: 'We couldnt delete the review' });
+    }
+};
+    
+
 
 // categories
 const createCategory = async (req, res) => {
@@ -206,6 +262,7 @@ module.exports = {
   updateGame,
   deleteGame,
   getReviews,
+  adminDeleteReview,
   createCategory,
   updateCategory,
   deleteCategory,

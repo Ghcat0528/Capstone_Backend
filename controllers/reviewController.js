@@ -6,6 +6,10 @@ const createReview = async (req, res) => {
   try {
     const { gameId, rating, content } = req.body;
     const userId = req.user?.userId;
+
+    if (!gameId || !rating || !content) {
+        return res.status(400).json({ message: "All fields are required" });
+      }
     if (rating < 1 || rating > 5) {
       return res
         .status(400)
@@ -27,6 +31,7 @@ const createReview = async (req, res) => {
     });
     res.status(201).json(review);
   } catch (error) {
+    console.error("Error creating review:", error);
     res.status(500).json({ message: " DIdnt create review" });
   }
 };
@@ -34,10 +39,12 @@ const createReview = async (req, res) => {
 const getReviewsByGame = async (req, res) => {
   try {
     const { gameId } = req.params;
+    const gameExists = await prisma.game.findUnique({
+        where: { id: gameId },
+      });
     if (!gameId) {
       return res.status(400).json({ message: "Game ID is required" });
     }
-    console.log("Fetching reviews for gameId:", gameId);
     const reviews = await prisma.review.findMany({
       where: { gameId },
       include: { user: { select: { id: true, name: true } } },
@@ -52,11 +59,17 @@ const getReviewsByGame = async (req, res) => {
 const getUserReviews = async (req, res) => {
   try {
     const userId = req.user.userId;
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, name: true, email: true}, 
+      });
     const reviews = await prisma.review.findMany({
       where: { userId },
       include: { game: { select: { id: true, title: true } } },
     });
-    res.json(reviews);
+   
+
+    res.status(200).json({ user, reviews });
   } catch (error) {
     res.status(500).json({ message: "We didn't get your reviews" });
   }
@@ -111,10 +124,99 @@ const deleteReview = async (req, res) => {
   }
 };
 
+//game
+
+
+const getCategories = async (req, res) => {
+    try {
+        const categories = await prisma.category.findMany();
+        res.json(categories);
+    } catch (error) {
+        console.error("Error fetching categories:", error);
+        res.status(500).json({ message: "Couldn't fetch categories" });
+    }
+};
+
+
+
+const getCatGames = async (req, res) => {
+    try {
+        const { categories } = req.query;
+        console.log('Received categories:', categories);
+
+        let games;
+        if (categories) {
+            const categoryIds = categories.split(',');
+            games = await prisma.game.findMany({
+                where: {
+                    categories: {
+                        some: {
+                            id: { in: categoryIds }
+                        }
+                    }
+                },
+                include: { categories: true } // Ensure categories are included
+            });
+        } else {
+            games = await prisma.game.findMany({ include: { categories: true } });
+        }
+        res.json(games);
+    } catch (error) {
+        console.error("Error fetching games:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+
+  
+  const getUserGames = async (req, res) => {
+    try {
+      const games = await prisma.game.findMany();
+      res.json(games);
+    } catch (error) {
+      res.status(500).json({ message: "Couldnt get the games." });
+    }
+  };
+
+  const getGameDetails = async (req, res) => {
+    try {
+      const { gameId } = req.params;
+      const game = await prisma.game.findUnique({
+        where: { id: gameId },
+        include: {
+          categories: true,
+          reviews: {
+            include: {
+              user: true,
+            }
+          }
+        }
+      });
+  
+      if (!game) {
+        return res.status(404).send('Game not found');
+      }
+        let averageRating = null;
+      if (game.reviews.length > 0) {
+        const totalRating = game.reviews.reduce((sum, review) => sum + review.rating, 0);
+        averageRating = totalRating / game.reviews.length;
+      }
+        res.json({
+        ...game,
+        averageRating,
+      });
+    } catch (error) {
+      res.status(500).json({ message: "We couldn't get that game" });
+    }
+  };
+  
 module.exports = {
   createReview,
   getReviewsByGame,
   getUserReviews,
   updateReview,
   deleteReview,
+  getCategories,
+  getCatGames,
+  getUserGames,
+  getGameDetails,
 };
