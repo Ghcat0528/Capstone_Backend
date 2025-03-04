@@ -11,16 +11,13 @@ dotenv.config();
 
 const app = express();
 
-const corsOptions = {
-  origin: [
-    "https://capstone-frontend-wctm.onrender.com",  
-    "http://localhost:5173", 
-  ],
-  methods: ["GET", "POST", "PUT", "DELETE"], 
-  allowedHeaders: ["Content-Type", "Authorization"], 
-};
+app.use(cors({
+  origin: 'https://capstone-frontend-wctm.onrender.com',  
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],    
+  allowedHeaders: ['Content-Type', 'Authorization'],       
+}));
 
-app.use(cors(corsOptions));  
+
 
 app.use(express.json());
 app.get("/", (req, res) => res.send("Welcome to the Video Game Review API"));
