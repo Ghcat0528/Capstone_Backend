@@ -21,12 +21,12 @@ router.get("/users", checkAdmin, getUsers);
 router.put("/:userId/role", checkAdmin, updateUserRole);
 router.delete("/:userId", checkAdmin, deleteUser);
 //Game routes
-router.get("/games/:gameId", checkAdmin, getGames);
-router.post("/games/:gameId", checkAdmin, createGame);
+router.get("/games", checkAdmin, getGames);
+router.post("/games", checkAdmin, createGame);
 router.put("/games/:gameId", checkAdmin, updateGame);
 router.delete("/games/:gameId", checkAdmin, deleteGame);
 
-// Similarly for reviews and categories
+// reviews and categories
 router.get("/reviews", checkAdmin, getReviews);
 router.delete("/review/:reviewId", checkAdmin, adminDeleteReview);
 

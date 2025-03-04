@@ -52,12 +52,10 @@ const deleteUser = async (req, res) => {
     try {
       const { userId } = req.params;
   
-      // Ensure the logged-in user is an admin (assuming req.user.role exists)
       if (req.user.role !== 'admin') {
         return res.status(403).json({ message: "You do not have permission to delete this user" });
       }
   
-      // Optionally: Check if the user to be deleted exists
       const userToDelete = await prisma.user.findUnique({
         where: { id: userId },
       });
@@ -66,20 +64,18 @@ const deleteUser = async (req, res) => {
         return res.status(404).json({ message: "User not found" });
       }
   
-      // Delete related data (e.g., reviews, followers, and following) for this user
       await prisma.review.deleteMany({
-        where: { userId: userId }, // Delete all reviews by this user
+        where: { userId: userId }, 
       });
   
       await prisma.follower.deleteMany({
-        where: { followerId: userId }, // Delete all follower records for this user
+        where: { followerId: userId }, 
       });
   
       await prisma.following.deleteMany({
-        where: { followingId: userId }, // Delete all following records for this user
+        where: { followingId: userId },
       });
   
-      // Finally, delete the user
       await prisma.user.delete({
         where: { id: userId },
       });

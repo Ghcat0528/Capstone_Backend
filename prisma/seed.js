@@ -21,7 +21,6 @@ async function seed() {
         },
       });
 
-      console.log("Admin user created:", adminUser);
     } else {
       const updatedUser = await prisma.user.update({
         where: { email: "grace@gmail.com" },

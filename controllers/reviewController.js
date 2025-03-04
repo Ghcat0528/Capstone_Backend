@@ -142,7 +142,6 @@ const getCategories = async (req, res) => {
 const getCatGames = async (req, res) => {
     try {
         const { categories } = req.query;
-        console.log('Received categories:', categories);
 
         let games;
         if (categories) {
@@ -155,7 +154,7 @@ const getCatGames = async (req, res) => {
                         }
                     }
                 },
-                include: { categories: true } // Ensure categories are included
+                include: { categories: true }
             });
         } else {
             games = await prisma.game.findMany({ include: { categories: true } });

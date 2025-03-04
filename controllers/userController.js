@@ -3,7 +3,6 @@ const prisma = new PrismaClient();
 
 const getUserProfile = async (req, res) => {
   try {
-    console.log("Request user object:", req.user); // Debugging log
 
     if (!req.user || !req.user.userId) {
       return res.status(400).json({ error: "User ID not found in request" });
@@ -16,7 +15,6 @@ const getUserProfile = async (req, res) => {
         name: true,
         email: true,
         reviews: { include: { game: true } },
-        // Fetching followers and following through the UserFollow relation
         followedBy: {
           select: {
             follower: {
@@ -38,7 +36,6 @@ const getUserProfile = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    // ✅ Extract only the following and followers list properly
     const followingList = user.follows.map((f) => f.following);
     const followersList = user.followedBy.map((f) => f.follower);
 
@@ -47,8 +44,8 @@ const getUserProfile = async (req, res) => {
       name: user.name,
       email: user.email,
       reviews: user.reviews,
-      following: followingList, // Clean list of followed users
-      followers: followersList, // Clean list of followers
+      following: followingList, 
+      followers: followersList, 
     });
   } catch (error) {
     console.error("Error fetching user profile & following:", error);
@@ -62,10 +59,9 @@ const updateUserProfile = async (req, res) => {
       return res.status(400).json({ error: "User ID not found in request" });
     }
 
-    // Update the user's profile with the data provided in req.body
     const updatedUser = await prisma.user.update({
       where: { id: req.user.userId },
-      data: req.body, // Assuming req.body contains the fields to update
+      data: req.body, 
     });
 
     res.json(updatedUser);
@@ -76,15 +72,12 @@ const updateUserProfile = async (req, res) => {
 }
 const deleteUserProfile = async (req, res) => {
   try {
-    // Ensure the user is logged in and has a valid user ID
-    const { userId } = req.user; // User from authentication middleware
+    const { userId } = req.user; 
 
     if (!userId) {
       return res.status(400).json({ error: "User ID not found in request" });
     }
 
-    // Optionally: Check if the user is trying to delete their own profile
-    // In this case, it would already be handled by using req.user.userId
     const user = await prisma.user.findUnique({
       where: { id: userId },
     });
@@ -93,20 +86,18 @@ const deleteUserProfile = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    // Delete user-related data (reviews, followers, etc.) before deleting user
     await prisma.review.deleteMany({
-      where: { userId: userId }, // Delete all reviews made by the user
+      where: { userId: userId }, 
     });
 
     await prisma.follower.deleteMany({
-      where: { followerId: userId }, // Delete all follower records for this user
+      where: { followerId: userId }, 
     });
 
     await prisma.following.deleteMany({
-      where: { followingId: userId }, // Delete all following records for this user
+      where: { followingId: userId }, 
     });
 
-    // Finally, delete the user profile
     await prisma.user.delete({
       where: { id: userId },
     });
@@ -133,123 +124,76 @@ const getUserReviews = async (req, res) => {
 };
 
 const followUser = async (req, res) => {
-  const loggedInUserId = req.user.userId; // Use logged-in user ID from req.user
-  const { userId } = req.params; // The user to follow
+  const loggedInUserId = req.user.userId; 
+  const { userId } = req.params;  
 
   try {
-    const followerId = String(loggedInUserId);
-    const followingId = String(userId);
-
-    const followerExists = await prisma.user.findUnique({ where: { id: followerId } });
-    const followingExists = await prisma.user.findUnique({ where: { id: followingId } });
-
-    if (!followerExists) {
-      return res.status(400).json({ message: "Follower user does not exist." });
-    }
-
-    if (!followingExists) {
-      return res.status(400).json({ message: "User to follow does not exist." });
-    }
-
-    // Check if already following
     const existingFollow = await prisma.userFollow.findUnique({
       where: {
         followerId_followingId: {
           followerId: loggedInUserId,
           followingId: userId,
-        }
-      }
+        },
+      },
     });
-    
+
     if (existingFollow) {
       return res.status(400).json({ message: "Already following this user" });
     }
 
-    // Create the follow relationship by adding to both `follows` and `followedBy`
-    await prisma.user.update({
-      where: { id: followerId },
+    await prisma.userFollow.create({
       data: {
-        follows: {
-          connect: { id: followingId },
-        },
+        followerId: loggedInUserId,
+        followingId: userId,
       },
     });
 
-    await prisma.user.update({
-      where: { id: followingId },
-      data: {
-        followedBy: {
-          connect: { id: followerId },
-        },
-      },
-    });
-
-    res.status(200).json({ message: "Followed successfully!" });
+    res.status(200).json({ message: "Followed successfully." });
   } catch (error) {
     console.error("Error following user:", error);
-    res.status(500).json({ message: "We couldn't follow the user for you." });
+    res.status(500).json({ message: "Error following user." });
   }
 };
 
 const unfollowUser = async (req, res) => {
-  const loggedInUserId = req.user.userId; // Get the logged-in user's ID
-  const { userId } = req.params; // Get the userId to unfollow
-
-  if (loggedInUserId === userId) {
-    return res.status(400).json({ message: "You can't unfollow yourself." });
-  }
+  const loggedInUserId = req.user.userId;
+  const { userId } = req.params;
 
   try {
-    const followerId = String(loggedInUserId);
-    const followingId = String(userId);
-
-    // Check if the follow relationship exists
-    const existingFollow = await prisma.userFollow.findUnique({
+    const follow = await prisma.userFollow.findUnique({
       where: {
         followerId_followingId: {
-          followerId,
-          followingId,
+          followerId: loggedInUserId,
+          followingId: userId,
         },
       },
     });
 
-    if (!existingFollow) {
-      return res.status(400).json({ message: "You can't unfollow a user you're not following." });
+    if (!follow) {
+      return res.status(400).json({ message: "You are not following this user" });
     }
 
-    // Remove from both `follows` and `followedBy`
-    await prisma.user.update({
-      where: { id: followerId },
-      data: {
-        follows: {
-          disconnect: { id: followingId },
+    await prisma.userFollow.delete({
+      where: {
+        followerId_followingId: {
+          followerId: loggedInUserId,
+          followingId: userId,
         },
       },
     });
 
-    await prisma.user.update({
-      where: { id: followingId },
-      data: {
-        followedBy: {
-          disconnect: { id: followerId },
-        },
-      },
-    });
-
-    res.status(200).json({ message: "Unfollowed successfully!" });
+    res.status(200).json({ message: "Unfollowed successfully." });
   } catch (error) {
     console.error("Error unfollowing user:", error);
-    res.status(500).json({ message: "We couldn't unfollow the user for you." });
+    res.status(500).json({ message: "Error unfollowing user." });
   }
 };
 
 
 const getFollowers = async (req, res) => {
   try {
-    // Ensure you're getting the userId correctly from the request parameters
-    const userId = req.params.userId;  // This should be 'userId' if it's in the URL
+    const userId = req.params.userId;  
 
-    console.log(`Fetching followers for user with ID: ${userId}`);  // Check the value of userId
 
     if (!userId) {
       return res.status(400).json({ message: "User ID is required" });
@@ -257,7 +201,7 @@ const getFollowers = async (req, res) => {
 
     const user = await prisma.user.findUnique({
       where: {
-        id: userId,  // Use userId here
+        id: userId,  
       },
       include: {
         followedBy: {
@@ -287,7 +231,7 @@ const getFollowing = async (req, res) => {
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: {
-        follows: { // This includes the users the logged-in user is following
+        follows: { 
           include: { following: true },
         },
       },
@@ -307,43 +251,34 @@ const getFollowing = async (req, res) => {
 
 
 const isFollowing = async (req, res) => {
+  const loggedInUserId = req.user.userId; 
+  const { userId } = req.params;  
+
   try {
-    const { userId } = req.params; // The userId we are checking if following
-    const loggedInUser = req.user; // user is attached by authenticateUser middleware
-
-    console.log("Checking follow status for userId:", userId);
-    console.log("Logged-in user ID:", loggedInUser?.userId);
-
-    if (!loggedInUser) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-
     const followStatus = await prisma.userFollow.findUnique({
       where: {
         followerId_followingId: {
-          followerId: loggedInUser.userId,  // Correctly using loggedInUser.userId
-          followingId: userId,              // Correctly using the userId parameter
+          followerId: loggedInUserId,
+          followingId: userId,
         },
       },
     });
 
-    res.json({ isFollowing: Boolean(followStatus) });
-  } catch (error) {
+    res.status(200).json({ isFollowing: !!followStatus }); 
     console.error("Error checking follow status:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: "Failed to check follow status." });
   }
-};
+}
+
 
 const getOtherUserProfile = async (req, res) => {
   try {
-    const { userId } = req.params; // Get userId from the URL
-    console.log("Fetching user with ID:", userId);
+    const { userId } = req.params; 
 
     const user = await prisma.user.findUnique({
-      where: { id: userId },  // Find user by the ID passed in the URL
+      where: { id: userId },  
       include: {
         reviews: { include: { game: true } },
-        // Fetch followers and following through the UserFollow relation
         followedBy: {
           select: {
             follower: {
@@ -365,14 +300,13 @@ const getOtherUserProfile = async (req, res) => {
       return res.status(404).json({ error: "User not found..." });
     }
 
-    // Extract following and followers as well
     const followingList = user.follows.map((f) => f.following);
     const followersList = user.followedBy.map((f) => f.follower);
 
     res.json({
       ...user,
-      following: followingList,  // Clean following list
-      followers: followersList,  // Clean followers list
+      following: followingList,  
+      followers: followersList,  
     });
   } catch (error) {
     console.error("Error fetching user:", error);
