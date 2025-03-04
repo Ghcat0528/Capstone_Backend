@@ -31,7 +31,6 @@ const createReview = async (req, res) => {
     });
     res.status(201).json(review);
   } catch (error) {
-    console.error("Error creating review:", error);
     res.status(500).json({ message: " DIdnt create review" });
   }
 };
@@ -51,7 +50,6 @@ const getReviewsByGame = async (req, res) => {
     });
     res.json(reviews);
   } catch (error) {
-    console.error("Error fetching reviews:", error);
     res.status(500).json({ message: "Couldn't get reviews...." });
   }
 };
@@ -132,7 +130,6 @@ const getCategories = async (req, res) => {
         const categories = await prisma.category.findMany();
         res.json(categories);
     } catch (error) {
-        console.error("Error fetching categories:", error);
         res.status(500).json({ message: "Couldn't fetch categories" });
     }
 };
@@ -161,7 +158,6 @@ const getCatGames = async (req, res) => {
         }
         res.json(games);
     } catch (error) {
-        console.error("Error fetching games:", error);
         res.status(500).json({ message: "Server error" });
     }
 };

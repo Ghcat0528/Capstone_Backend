@@ -28,12 +28,13 @@ const registerUser = async (req, res) => {
 const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
-
     const user = await prisma.user.findUnique({
       where: { email },
     });
 
     if (!user) {
+        console.log("User not found."); //this console.log makes it work properly
+
       return res.status(404).json({ message: 'User not found. Please register first.' });
     }
 
@@ -41,7 +42,7 @@ const loginUser = async (req, res) => {
     if (!isPasswordValid) {
       return res.status(401).json({ message: 'Incorrect username or password.' });
     }
-
+   
     const token = createToken(user);
     res.status(200).json({ message: "Logged in!", token });
   } catch (error) {

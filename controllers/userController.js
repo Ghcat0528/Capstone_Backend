@@ -48,7 +48,6 @@ const getUserProfile = async (req, res) => {
       followers: followersList, 
     });
   } catch (error) {
-    console.error("Error fetching user profile & following:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
@@ -66,7 +65,6 @@ const updateUserProfile = async (req, res) => {
 
     res.json(updatedUser);
   } catch (error) {
-    console.error("Error updating user profile:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 }
@@ -104,7 +102,6 @@ const deleteUserProfile = async (req, res) => {
 
     res.status(200).json({ message: "User profile deleted successfully" });
   } catch (error) {
-    console.error("Error deleting user profile:", error);
     res.status(500).json({ error: "Failed to delete user profile" });
   }
 };
@@ -150,7 +147,6 @@ const followUser = async (req, res) => {
 
     res.status(200).json({ message: "Followed successfully." });
   } catch (error) {
-    console.error("Error following user:", error);
     res.status(500).json({ message: "Error following user." });
   }
 };
@@ -184,7 +180,6 @@ const unfollowUser = async (req, res) => {
 
     res.status(200).json({ message: "Unfollowed successfully." });
   } catch (error) {
-    console.error("Error unfollowing user:", error);
     res.status(500).json({ message: "Error unfollowing user." });
   }
 };
@@ -218,7 +213,6 @@ const getFollowers = async (req, res) => {
 
     res.status(200).json({ followers: user.followedBy });
   } catch (error) {
-    console.error(error);
     res.status(500).json({ message: "Could not fetch followers.", error: error.message });
   }
 };
@@ -244,7 +238,6 @@ const getFollowing = async (req, res) => {
     const following = user.follows.map(f => f.following);
     res.json({ following });
   } catch (error) {
-    console.error("Error fetching following:", error);
     res.status(500).json({ message: "Could not fetch following." });
   }
 };
@@ -264,11 +257,11 @@ const isFollowing = async (req, res) => {
       },
     });
 
-    res.status(200).json({ isFollowing: !!followStatus }); 
-    console.error("Error checking follow status:", error);
+    res.status(200).json({ isFollowing: !!followStatus });
+  } catch (error) {  
     res.status(500).json({ message: "Failed to check follow status." });
   }
-}
+};
 
 
 const getOtherUserProfile = async (req, res) => {
@@ -309,7 +302,6 @@ const getOtherUserProfile = async (req, res) => {
       followers: followersList,  
     });
   } catch (error) {
-    console.error("Error fetching user:", error);
     res.status(500).json({ error: "We are having a difficult time getting that profile" });
   }
 };
