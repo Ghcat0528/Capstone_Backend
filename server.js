@@ -12,9 +12,9 @@ dotenv.config();
 const app = express();
 
 app.use(cors({
-  origin: ['https://capstone-frontend-wctm.onrender.com', 'https://funny-baklava-0242d6.netlify.app'],  
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],    
-  allowedHeaders: ['Content-Type', 'Authorization'],       
+  origin: '*',  
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
 

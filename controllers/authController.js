@@ -26,28 +26,33 @@ const registerUser = async (req, res) => {
 };
 
 const loginUser = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (!user) {
-        console.log("User not found."); //this console.log makes it work properly
-
-      return res.status(404).json({ message: 'User not found. Please register first.' });
+    try {
+      const { email, password } = req.body;
+  
+      // Log incoming request to ensure data is passed correctly
+      console.log("Login request body:", req.body);
+  
+      const user = await prisma.user.findUnique({
+        where: { email },
+      });
+  
+      if (!user) {
+        console.log("User not found for email:", email);
+        return res.status(404).json({ message: 'User not found. Please register first.' });
+      }
+  
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      if (!isPasswordValid) {
+        console.log("Invalid password for user:", email);
+        return res.status(401).json({ message: 'Incorrect username or password.' });
+      }
+     
+      const token = createToken(user);
+      return res.status(200).json({ message: "Logged in!", token });
+    } catch (error) {
+      console.error("Error during login:", error);  // Log full error for debugging
+      return res.status(500).json({ message: 'An error occurred during login.' });
     }
-
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      return res.status(401).json({ message: 'Incorrect username or password.' });
-    }
-   
-    const token = createToken(user);
-    res.status(200).json({ message: "Logged in!", token });
-  } catch (error) {
-    res.status(500).json({ message: 'An error occurred during login.' });
-  }
-};
-
+  };
+  
 module.exports = { registerUser, loginUser };
