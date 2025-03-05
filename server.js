@@ -12,7 +12,7 @@ dotenv.config();
 const app = express();
 
 app.use(cors({
-  origin: 'https://beautiful-conkies-4d2965.netlify.app',  
+  origins: [ 'https://beautiful-conkies-4d2965.netlify.app',  'https://67c7e74687e8055a087a9df6--beautiful-conkies-4d2965.netlify.app'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
