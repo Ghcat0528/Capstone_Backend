@@ -1,62 +1,54 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
-   url      = env("DATABASE_URL") 
+  url      = "(function)"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
 model User {
-  id           String        @id @default(uuid())
-  name         String
-  email        String        @unique
-  password     String
-  reviews      Review[]      // No need for onDelete here
-  role         String        @default("user")
-  follows      UserFollow[]  @relation("UserFollows")    // Follow relations, no fields/references here
-  followedBy   UserFollow[]  @relation("UserFollowedBy") // Followed relations, no fields/references here
+  id         String       @id @default(uuid())
+  email      String       @unique
+  password   String
+  name       String
+  role       String       @default("user")
+  reviews    Review[]
+  follows    UserFollow[] @relation("UserFollows")
+  followedBy UserFollow[] @relation("UserFollowedBy")
 }
 
 model UserFollow {
-  followerId   String
-  followingId  String
-  follower     User   @relation("UserFollows", fields: [followerId], references: [id], onDelete: Cascade)  // From follower's perspective
-  following    User   @relation("UserFollowedBy", fields: [followingId], references: [id], onDelete: Cascade)  // From following's perspective
+  followerId  String
+  followingId String
+  follower    User   @relation("UserFollows", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User   @relation("UserFollowedBy", fields: [followingId], references: [id], onDelete: Cascade)
 
-  @@id([followerId, followingId])  // Composite primary key
+  @@id([followerId, followingId])
 }
 
 model Game {
-  id      String  @id @default(uuid())
-  title   String  
-  picture String?
+  id         String     @id @default(uuid())
+  title      String
+  picture    String?
+  reviews    Review[]
   categories Category[] @relation("GameCategories")
-  reviews Review[]  // No change here
 }
 
 model Category {
-  id    String  @id @default(uuid())
-  name  String  @unique()
-  games  Game[]  @relation("GameCategories")
+  id    String @id @default(uuid())
+  name  String @unique
+  games Game[] @relation("GameCategories")
 }
 
 model Review {
   id        String   @id @default(uuid())
   rating    Int
-  content   String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
-  game      Game     @relation(fields: [gameId], references: [id])
+  content   String
   gameId    String
   createdAt DateTime @default(now())
+  game      Game     @relation(fields: [gameId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
-
-
-
