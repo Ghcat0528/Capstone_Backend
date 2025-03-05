@@ -5,7 +5,7 @@ const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
 const adminRoutes = require("./routes/adminRoutes");
-const PORT = 3808;
+const port = process.env.PORT || 3808;
 
 dotenv.config();
 
@@ -26,6 +26,6 @@ app.use("/api/users", userRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/admin", adminRoutes);
 
-app.listen(PORT, () => {
-  console.log(`running on ${PORT}`);
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
 });
