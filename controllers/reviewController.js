@@ -158,7 +158,7 @@ const getCatGames = async (req, res) => {
         }
         res.json(games);
     } catch (error) {
-        res.status(500).json({ message: "Server error" });
+        res.status(500).json({ message: "Server error.." });
     }
 };
 
